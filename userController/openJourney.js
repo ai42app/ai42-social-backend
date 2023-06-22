@@ -63,6 +63,8 @@ exports.likeImage=(req,res)=>{
 }
 
 
+
+
 exports.getImage=(req,res)=>{
     const { id } = req.params;
 
@@ -108,3 +110,4 @@ exports.getImages=(req,res)=>{
         res.status(200).json(results);
     });
 }
+

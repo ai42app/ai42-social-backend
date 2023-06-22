@@ -13,7 +13,7 @@ router.post('/createChannel',userController.createChannel)
 
 router.post('/users',userController.convohistory);
 router.post('/saveImages',openJourney.saveImages);
-router.post('/likeImages/:id',openJourney.likeImage);
+router.put('/likeImages/:id',openJourney.likeImage);
 
 
 
