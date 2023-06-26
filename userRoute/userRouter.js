@@ -27,6 +27,8 @@ router.get("/getusers",userController.getConvohistory);
 router.get('/getImages/',openJourney.getImages);
 router.get('/getImage/:id',openJourney.getImage);
 router.get("/users/:id",userController.getcanvoid);
+router.get("/include/:keywords",openJourney.IncludesWords);
+router.get("/exclude/:keywords",openJourney.ExcludeWords);
 
   module.exports = router
 
