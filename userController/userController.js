@@ -1,6 +1,6 @@
 const connection = require("../database/database");
 const crypto = require("crypto");
-var tableName = "userresponse";
+var tableName = "users_data";
 
 const database = () => {
   try {
@@ -24,12 +24,12 @@ exports.useremailhash = (req, res) => {
 };
 
 exports.convohistory = (req, res) => {
-  const { id, text, createdAt, ai, value, title } = req.body;
+  const { id, text, createdAt, ai, value, title,selected } = req.body;
 
   // let data = req.body;
 
-  const query = `INSERT INTO ${tableName} (id,text,createdAt,ai,value,title) VALUES (?,?,?,?,?,?)`;
-  const values = [id, text, createdAt, ai, value, title];
+  const query = `INSERT INTO ${tableName} (id,text,createdAt,ai,value,title,selected) VALUES (?,?,?,?,?,?,?)`;
+  const values = [id, text, createdAt, ai, value, title,selected];
 
   if (!(id && text && createdAt && ai && value && title)) {
     res.status(400).json({ success: false, msg: "Something error" });

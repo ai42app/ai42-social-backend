@@ -15,15 +15,17 @@ database();
 exports.saveImages = (req, res) => {
   const { link_to_image, creator, keywords, date, likes } = req.body;
 
+
   const query = `INSERT INTO ${tableName} (link_to_image,creator,keywords,date,likes) VALUES (?,?,?,?,?)`;
 
   const values = [link_to_image, creator, keywords, date, likes];
 
   if (!(link_to_image && creator && keywords && date)) {
-    res.status(400).json({ success: false, msg: "Search value not valid" });
+    res.status(400).json({ success: false, msg: "all field require" });
   } //reject promise with error
   else {
     connection.query(query, values, (error, results) => {
+      console.log(results,"ooo")
       if (error) {
         console.error("Error during inserting  Image:", error);
         return res
