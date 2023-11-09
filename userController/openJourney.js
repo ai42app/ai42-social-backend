@@ -1,6 +1,6 @@
 const connection = require("../database/database");
 var tableName = "user_images";
-
+const tableName2 = "like_image"; // Update with your actual table name
 const database = () => {
   try {
     connection.connect();
@@ -13,12 +13,24 @@ const database = () => {
 database();
 
 exports.saveImages = (req, res) => {
-  const { link_to_image, creator, keywords, date, likes } = req.body;
+  const { link_to_image, creator, keywords, date,Likes} = req.body;
+  const checkUserLikesQuery = `SELECT * FROM ${tableName2}`;
+        const checkUserLikes= [];
 
+        connection.query(checkUserLikesQuery, checkUserLikes, (checkUserExistsError, checkUserExistsResults) => {
+          console.log(checkUserExistsResults,"oo")
+          if (checkUserExistsError) {
+            console.error("Error during SELECT operation:", checkUserExistsError);
+            return res.status(500).json({
+                error: "Failed to check user in tableName2",
+                dbError: checkUserExistsError.message,
+            });
+        }
+        })
 
-  const query = `INSERT INTO ${tableName} (link_to_image,creator,keywords,date,likes) VALUES (?,?,?,?,?)`;
+  const query = `INSERT INTO ${tableName} (link_to_image,creator,keywords,date,Likes) VALUES (?,?,?,?,?)`;
 
-  const values = [link_to_image, creator, keywords, date, likes];
+  const values = [link_to_image, creator, keywords, date,Likes];
 
   if (!(link_to_image && creator && keywords && date)) {
     res.status(400).json({ success: false, msg: "all field require" });
@@ -46,11 +58,13 @@ exports.saveImages = (req, res) => {
 
 exports.likeImage = (req, res) => {
   const { id } = req.params;
+  
 
-  const query = `UPDATE ${tableName} SET likes=likes +1     WHERE id=${id}`;
+  const query = `UPDATE ${tableName} SET Likes=Likes +1     WHERE id=${id}`;
   const values = [id];
 
   connection.query(query, values, (error, results) => {
+    console.log(results,"ooo")
     if (error) {
       console.error("Error updating image like:", error);
       return res
@@ -69,9 +83,6 @@ exports.likeImage = (req, res) => {
 
 exports.getImage = (req, res) => {
   const { id } = req.params;
-
-  const query = `SELECT * FROM ${tableName} WHERE id = ${id}`;
-  const values = [id];
 
   connection.query(query, values, (error, results) => {
     if (error) {
