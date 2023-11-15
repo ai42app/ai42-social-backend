@@ -1,124 +1,189 @@
 const connection = require("../database/database");
-const tableName1 = "user_images"; // Update with your actual table name
-const tableName2 = "like_image"; // Update with your actual table name
+var tableName1 = "user_images";
+const tableName2 = "like_image";
 
-const database = () => {
-    try {
-        connection.connect();
-        console.log("Connected to the database!");
-    } catch (error) {
-        console.log("Database connection failed:", error);
-        process.exit(1); // Terminate the application if the database connection fails
-    }
-};
-database();
 
-exports.userLiked = (req, res) => {
+exports.userLiked = async (req, res) => {
     const { id } = req.params;
     const { Like_user } = req.body;
-
-    const getAllUserData = `SELECT * FROM ${tableName1} WHERE id = ?`;
-    const checkLikeValues = [id];
-
-    connection.query(getAllUserData, checkLikeValues, (checkLikeError, checkUserResults) => {
-        if (checkLikeError) {
-            console.error("Error during SELECT operation:", checkLikeError);
-            return res.status(500).json({
-                error: "Failed to check like",
-                dbError: checkLikeError.message,
-            });
-        }
-
-        let userData = checkUserResults[0];
-
-        const checkUserExistsQuery = `SELECT * FROM ${tableName2}`;
-        const checkUserExistsValues = [];
-
-        connection.query(checkUserExistsQuery, checkUserExistsValues, (checkUserExistsError, checkUserExistsResults) => {
-// console.log(checkUserExistsResults,"kkk"),
- console.log(checkLikeError)
-            if (checkUserExistsError) {
-                console.error("Error during SELECT operation:", checkUserExistsError);
+    const { createdAt } = req.body;
+    try {
+        const getLikedLength = `SELECT * FROM ${tableName2} WHERE image_id = ? `;
+        const likedCountvalue = [id]
+        connection.query(getLikedLength, likedCountvalue, (checkLikedError, LikedResultCount) => {  // get Liked user length
+            console.log(LikedResultCount, "kk")
+            if (checkLikedError) {
+                console.error("Error during SELECT operation:", checkLikedError);
                 return res.status(500).json({
-                    error: "Failed to check user in tableName2",
-                    dbError: checkUserExistsError.message,
+                    error: "Failed to check like",
+                    dbError: checkLikedError.message,
                 });
             }
 
-            if (checkUserExistsResults.length) {
-                const existingCreator = checkUserExistsResults[0].user_id;
-             
-                if (existingCreator == id) {
-                    return res.status(200).json({ success: true, liked: true, message: "User already exists in tableName2 with creator" });
-                }
-                else {
-                    // If the user hasn't liked the item yet, add the like (set is_liked to true)
-                    const insertQuery = `INSERT INTO ${tableName2} (user_id, image_link, creator, keyword, is_liked, Like_user) VALUES (?,?,?,?,?,?)`;
-                    const insertValues = [userData.id, userData.link_to_image, userData.creator, userData.keywords, true, Like_user];
+            if (LikedResultCount.length === 0) {
+                console.log()
 
-                    connection.query(insertQuery, insertValues, (insertError, insertResults) => {
-                        if (insertError) {
-                            console.error("Error during inserting like:", insertError);
-                            return res.status(500).json({
-                                error: "Failed to like",
-                                dbError: insertError.message,
-                            });
-                        }
+                const query = `UPDATE ${tableName1} SET Likes=${LikedResultCount.length + 1} WHERE id=${id}`;
+                const values = [id];
 
-                        res.status(200).json({ success: true, message: "Liked the image" });
-                    });
-                }
-            } else {
-                const insertQuery = `INSERT INTO ${tableName2} (user_id, image_link, creator, keyword, is_liked, Like_user) VALUES (?,?,?,?,?,?)`;
-                const insertValues = [userData.id, userData.link_to_image, userData.creator, userData.keywords, true, Like_user];
-
-                connection.query(insertQuery, insertValues, (insertError, insertResults) => {
-                    if (insertError) {
-                        console.error("Error during inserting like:", insertError);
-                        return res.status(500).json({
-                            error: "Failed to like",
-                            dbError: insertError.message,
-                        });
+                connection.query(query, values, (error, UpdateResults) => {
+                    // console.log(UpdateResults, "UpdateResults")
+                    if (error) {
+                        console.error("Error updating image like:", error);
+                        return res
+                            .status(500)
+                            .json({ error: "Failed to update image", dbError: error.message });
                     }
 
-                    res.status(200).json({ success: true, message: "Liked the image" });
+                    if (UpdateResults.affectedRows === 0) {
+                        return res.status(404).json({ error: "Image not found" });
+                    }
+
+                    // console.log("Image updated successfully");
+                    // res.status(200).json({ success: true, message: "Like added successfully" });
+                    if (UpdateResults) {
+                        const getAllUserData = `SELECT * FROM ${tableName1} WHERE id = ?`;
+                        const checkLikeValues = [id];
+                        connection.query(getAllUserData, checkLikeValues, (checkLikeError, checkUserResults) => {
+
+                            if (checkLikeError) {
+                                console.error("Error during SELECT operation:", checkLikeError);
+                                return res.status(500).json({
+                                    error: "Failed to check like",
+                                    dbError: checkLikeError.message,
+                                });
+                            }
+                            let userData = checkUserResults[0]
+
+                            // If the user hasn't liked the item yet, add the like (set is_liked to true)
+                            const insertQuery = `INSERT INTO ${tableName2} (image_id, image_link, creator, keyword, is_liked, Like_user,createdAt) VALUES (?,?,?,?,?,?,?)`;
+                            const insertValues = [userData.id, userData.link_to_image, userData.creator, userData.keywords, true, Like_user, createdAt];
+
+                            connection.query(insertQuery, insertValues, (insertError, insertResults) => {
+                                if (insertError) {
+                                    console.error("Error during inserting like:", insertError);
+                                    return res.status(500).json({
+                                        error: "Failed to like",
+                                        dbError: insertError.message,
+                                    });
+                                }
+
+                                res.status(200).json({ success: true, message: "Liked the image" });
+                            });
+                        })
+
+
+                    }
                 });
+
+            } else {
+                const checkLikedUser = `SELECT * FROM ${tableName2} WHERE image_id = ? AND Like_user = ?`;
+                const checkLikedUserValue = [id, Like_user]
+                connection.query(checkLikedUser, checkLikedUserValue, (error, LikedUser) => {
+                    console.log(LikedUser.length, "LikedUser")
+                    if (LikedUser.length) {
+                        // User has already liked the item, so perform unlike functionality
+                        const deleteLikeQuery = `DELETE FROM ${tableName2} WHERE image_id = ? AND Like_user = ?`;
+                        const deleteLikeValues = [id, Like_user];
+
+                        connection.query(deleteLikeQuery, deleteLikeValues, (deleteLikeError, deleteLikeResult) => {
+                            if (deleteLikeError) {
+                                console.error("Error during deleting like:", deleteLikeError);
+                                return res.status(500).json({
+                                    error: "Failed to unlike",
+                                    dbError: deleteLikeError.message,
+                                });
+                            }
+
+                            // Update the like count in tableName1 by decrementing 1
+                            const updateLikeCountQuery = `UPDATE ${tableName1} SET Likes = Likes - 1 WHERE id = ?`;
+                            const updateLikeCountValues = [id];
+
+                            connection.query(updateLikeCountQuery, updateLikeCountValues, (updateLikeError, updateLikeResult) => {
+                                if (updateLikeError) {
+                                    console.error("Error updating image like count:", updateLikeError);
+                                    return res.status(500).json({
+                                        error: "Failed to update image",
+                                        dbError: updateLikeError.message,
+                                    });
+                                }
+
+                                res.status(200).json({ success: true, message: "Unliked the image" });
+                            });
+                        });
+                    } else {
+                        const query = `UPDATE ${tableName1} SET Likes=${LikedResultCount.length + 1}    WHERE id=${id}`;
+                        const values = [id];
+
+                        connection.query(query, values, (error, UpdateResults) => {
+                            // console.log(UpdateResults, "UpdateResults")
+                            if (error) {
+                                console.error("Error updating image like:", error);
+                                return res
+                                    .status(500)
+                                    .json({ error: "Failed to update image", dbError: error.message });
+                            }
+
+                            if (UpdateResults.affectedRows === 0) {
+                                return res.status(404).json({ error: "Image not found" });
+                            }
+
+                            // console.log("Image updated successfully");
+                            // res.status(200).json({ success: true, message: "Like added successfully" });
+                            if (UpdateResults) {
+                                const getAllUserData = `SELECT * FROM ${tableName1} WHERE id = ?`;
+                                const checkLikeValues = [id];
+                                connection.query(getAllUserData, checkLikeValues, (checkLikeError, checkUserResults) => {
+
+                                    if (checkLikeError) {
+                                        console.error("Error during SELECT operation:", checkLikeError);
+                                        return res.status(500).json({
+                                            error: "Failed to check like",
+                                            dbError: checkLikeError.message,
+                                        });
+                                    }
+                                    let userData = checkUserResults[0]
+
+                                    // If the user hasn't liked the item yet, add the like (set is_liked to true)
+                                    const insertQuery = `INSERT INTO ${tableName2} (image_id, image_link, creator, keyword, is_liked, Like_user) VALUES (?,?,?,?,?,?)`;
+                                    const insertValues = [userData.id, userData.link_to_image, userData.creator, userData.keywords, true, Like_user];
+
+                                    connection.query(insertQuery, insertValues, (insertError, insertResults) => {
+                                        if (insertError) {
+                                            console.error("Error during inserting like:", insertError);
+                                            return res.status(500).json({
+                                                error: "Failed to like",
+                                                dbError: insertError.message,
+                                            });
+                                        }
+
+                                        res.status(200).json({ success: true, message: "Liked the image" });
+                                    });
+                                })
+
+
+                            }
+                        });
+                    }
+                })
+
             }
 
 
-        });
-    });
+        })
+
+
+
+    } catch (error) {
+        res.status(500).json({ error: error.message })
+    }
 };
-
-
-
-exports.userUnLiked = (req, res) => {
-    const { id } = req.params;
-    const query = `UPDATE ${tableName2} SET is_liked=false WHERE id=${id}`;
-    const values = [id];
-    connection.query(query, values, (error, results) => {
-        if (error) {
-            console.error("Error updating image like:", error);
-            return res
-                .status(500)
-                .json({ error: "Failed to update image", dbError: error.message });
-        }
-
-        if (results.affectedRows === 0) {
-            return res.status(404).json({ error: "Image not found" });
-        }
-
-        console.log("Image unliked successfully");
-        res.status(200).json({ success: true, message: "unliked successfully" });
-    });
-
-}
-
 
 
 exports.getUserLikedImage = (req, res) => {
-    const getUserLikedQuery = `SELECT * FROM ${tableName2}`;
-    const getUserLikedValues = [];
+    const {Like_user}=req.params
+    const getUserLikedQuery = `SELECT * FROM ${tableName2} WHERE Like_user=?`;
+    const getUserLikedValues = [Like_user];
 
     connection.query(getUserLikedQuery, getUserLikedValues, (error, results) => {
         if (error) {

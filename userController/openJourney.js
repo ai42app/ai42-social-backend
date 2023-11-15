@@ -1,19 +1,10 @@
 const connection = require("../database/database");
 var tableName = "user_images";
-const tableName2 = "like_image"; // Update with your actual table name
-const database = () => {
-  try {
-    connection.connect();
-    console.log("Connected to the database!");
-  } catch (error) {
-    console.log("Database connection failed:", error);
-    process.exit(1); // Terminate the application if the database connection fails
-  }
-};
-database();
+const tableName2 = "like_data"; // Update with your actual table name
+
 
 exports.saveImages = (req, res) => {
-  const { link_to_image, creator, keywords, date,Likes} = req.body;
+  const { id,ai,createdAt,selected,link_to_image, creator, keywords,Likes} = req.body;
   const checkUserLikesQuery = `SELECT * FROM ${tableName2}`;
         const checkUserLikes= [];
 
@@ -28,11 +19,11 @@ exports.saveImages = (req, res) => {
         }
         })
 
-  const query = `INSERT INTO ${tableName} (link_to_image,creator,keywords,date,Likes) VALUES (?,?,?,?,?)`;
+  const query = `INSERT INTO ${tableName} (id,ai,createdAt,selected,link_to_image,creator,keywords,Likes) VALUES (?,?,?,?,?,?,?,?)`;
 
-  const values = [link_to_image, creator, keywords, date,Likes];
+  const values = [id,ai,createdAt,selected,link_to_image, creator, keywords,Likes];
 
-  if (!(link_to_image && creator && keywords && date)) {
+  if (!(link_to_image && creator && keywords)) {
     res.status(400).json({ success: false, msg: "all field require" });
   } //reject promise with error
   else {
@@ -53,33 +44,11 @@ exports.saveImages = (req, res) => {
           id: results.insertId,
         });
     });
+
+    
   }
 };
 
-exports.likeImage = (req, res) => {
-  const { id } = req.params;
-  
-
-  const query = `UPDATE ${tableName} SET Likes=Likes +1     WHERE id=${id}`;
-  const values = [id];
-
-  connection.query(query, values, (error, results) => {
-    console.log(results,"ooo")
-    if (error) {
-      console.error("Error updating image like:", error);
-      return res
-        .status(500)
-        .json({ error: "Failed to update image", dbError: error.message });
-    }
-
-    if (results.affectedRows === 0) {
-      return res.status(404).json({ error: "Image not found" });
-    }
-
-    console.log("Image updated successfully");
-    res.status(200).json({ success: true, message: "Like added successfully" });
-  });
-};
 
 exports.getImage = (req, res) => {
   const { id } = req.params;
@@ -102,7 +71,6 @@ exports.getImage = (req, res) => {
 };
 
 exports.getImages = (req, res) => {
-  const { limit } = req.params;
 
   const query = `SELECT * FROM ${tableName}`;
   const values = [];
@@ -132,7 +100,8 @@ exports.IncludesWords = (req, res) => {
  
   const values = [`%${keywords}%`];
 
-
+try{
+  
   connection.query(query,values, (error, results) => {
     if (error) {
       console.error("Error fetching user:", error);
@@ -148,6 +117,9 @@ exports.IncludesWords = (req, res) => {
     console.log("Images fetched successfully");
     res.status(200).json(results);
   });
+}catch{
+  res.status(500).json({status:false, error:"keywords require"})
+}
 };
 
 
