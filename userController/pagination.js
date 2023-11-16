@@ -52,60 +52,55 @@
 //   }
 
 // };
-
-
 const connection = require("../database/database");
 var tableName = "user_images";
 var tableName2 = "like_image";
 
 exports.pagination = async (req, res) => {
-  const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
-  const pageSize = parseInt(req.query.limit) || 10; // Number of items per page
-  const userId = "satnamsingh85611@gmail.com" || 10; 
+  const page = parseInt(req.query.page) || 1;
+  const pageSize = parseInt(req.query.limit) || 10;
+  const userId = req.query.userId; // user email
+
   const checkUserLikesQuery = `SELECT * FROM ${tableName}`;
 
   try {
-    connection.query(checkUserLikesQuery, async (err, allUserData) => {
+    connection.query(checkUserLikesQuery, (err, allUserData) => {
       if (err) {
         console.error("Error during SELECT operation:", err);
         return res.status(500).json({
-          error: "Failed to retrieve data from tableName",
+          error: "Failed to check user in tableName2",
           dbError: err.message,
         });
       }
 
-      const checkUserLikesQuery2 = `SELECT * FROM ${tableName2} WHERE Like_user = ${userId}`;
+// get user liked and exist user id test@gmail.com
+      const checkUserQuery = `SELECT * FROM ${tableName2} WHERE like_user=?`;
+      const checkValue = [userId];
 
-      connection.query(checkUserLikesQuery2, (err, dataResult) => {
+      connection.query(checkUserQuery, checkValue, async (err, likedUserData) => {
         if (err) {
           console.error("Error during SELECT operation:", err);
           return res.status(500).json({
-            error: "Failed to retrieve data from tableName2",
+            error: "Failed to check user in tableName2",
             dbError: err.message,
           });
         }
 
-        // Extract IDs from the result of tableName2 query
-        dataResult.forEach((ele)=>{
-console.log(ele,"ele")
-        });
+        const likedUserIds = await likedUserData.map((like) => like.image_id);
+       
+        const usersWithLikes = allUserData.map((user) => ({
+          ...user,
+          is_Liked: likedUserIds.includes(user.id.toString()),
+        }));
+        // const usersWithLikes = allUserData.map((user) => {({...user,is_Liked: likedUserIds.includes(user.id)})});
 
-        // Update allUserData to include 'is_liked' property based on comparison
-        allUserData.forEach((item) => {
-
-          item.is_liked = []
-
-        });
-// console.log(allUserData,"ll")
-        let totalLength = allUserData.length; // total length of table
-
-        // Calculate the starting and ending indices for the current page
+        let totalLength = usersWithLikes.length;
         let startIndex = (page - 1) * pageSize;
         let endIndex = startIndex + pageSize;
-        let currentPageData = allUserData.slice(startIndex, endIndex);
+        let currentPageData = usersWithLikes.slice(startIndex, endIndex);
 
-        if (currentPageData.length > 0) {
-          res.status(200).json({
+        if (currentPageData) {
+          res.status(201).json({
             status: true,
             totalLength: totalLength,
             currentPageData: currentPageData,
@@ -120,4 +115,3 @@ console.log(ele,"ele")
     res.status(500).json({ error: "An error occurred" });
   }
 };
-

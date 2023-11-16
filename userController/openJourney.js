@@ -1,10 +1,10 @@
 const connection = require("../database/database");
 var tableName = "user_images";
-const tableName2 = "like_data"; // Update with your actual table name
+const tableName2 = "like_image"; 
 
 
 exports.saveImages = (req, res) => {
-  const { id,ai,createdAt,selected,link_to_image, creator, keywords,Likes} = req.body;
+  const {id,ai,createdAt,selected,link_to_image, creator, keywords,Likes} = req.body;
   const checkUserLikesQuery = `SELECT * FROM ${tableName2}`;
         const checkUserLikes= [];
 
@@ -23,7 +23,7 @@ exports.saveImages = (req, res) => {
 
   const values = [id,ai,createdAt,selected,link_to_image, creator, keywords,Likes];
 
-  if (!(link_to_image && creator && keywords)) {
+  if (!(link_to_image && creator && keywords && id)) {
     res.status(400).json({ success: false, msg: "all field require" });
   } //reject promise with error
   else {
@@ -52,8 +52,8 @@ exports.saveImages = (req, res) => {
 
 exports.getImage = (req, res) => {
   const { id } = req.params;
-
-  connection.query(query, values, (error, results) => {
+const getImageQuery=`SELECT *FROM ${tableName} WHERE id=${id}`
+  connection.query(getImageQuery,(error, results) => {
     if (error) {
       console.error("Error fetching user:", error);
       return res
