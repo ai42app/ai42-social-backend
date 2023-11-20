@@ -126,11 +126,8 @@ try{
 exports.ExcludeWords = (req, res) => {
   const { keywords} = req.params;
 
-
-
  const query = `SELECT * FROM ${tableName} WHERE keywords NOT Like ?`;
   const values = [`%${keywords}%`];
- 
 
   connection.query(query,values, (error, results) => {
     if (error) {

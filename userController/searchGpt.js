@@ -1,6 +1,7 @@
+const { Console } = require("console");
 const connection = require("../database/database");
 const crypto = require("crypto");
-var tableName = "users_data";
+var tableName = "searchgptusers";
 
 const database = () => {
   try {
@@ -23,18 +24,29 @@ exports.useremailhash = (req, res) => {
   // return hash.digest('hex');
 };
 
-exports.convohistory = (req, res) => {
-  const { id, text, createdAt, ai, value, title,selected } = req.body;
+
+
+// exports.createUserTable=(req,res)=>{
+//   var sql = "CREATE TABLE user (name VARCHAR(255), address VARCHAR(255))";
+//   connection.query(sql, function (err, result) {
+//     if (err) throw err;
+//     return res.send({result})
+//   });
+// }
+
+exports.saveSerachGPTUser = (req, res) => {
+  const { id, response, createdAt, ai, prompt_value, user_id,selected} = req.body;
 
   // let data = req.body;
 
-  const query = `INSERT INTO ${tableName} (id,text,createdAt,ai,value,title,selected) VALUES (?,?,?,?,?,?,?)`;
-  const values = [id, text, createdAt, ai, value, title,selected];
-
-  if (!(id && text && createdAt && ai && value && title)) {
+  const query = `INSERT INTO ${tableName} (id, response, createdAt, ai, prompt_value, user_id,selected ) VALUES (?,?,?,?,?,?,?)`;
+  const values = [id, response, createdAt, ai, prompt_value, user_id,selected];
+  console.log(values)
+  if (!(id && createdAt && ai && prompt_value && response && user_id && selected)) {
     res.status(400).json({ success: false, msg: "Something error" });
   } else {
     connection.query(query, values, (error, results) => {
+      
       if (error) {
         console.error("Error inserting user:", error);
         return res
@@ -45,14 +57,16 @@ exports.convohistory = (req, res) => {
       console.log("User inserted successfully");
       res
         .status(200)
-        .json({ success: true, message: "User inserted successfully" });
+        .json({ success: true, message: "searchGPT User inserted successfully" });
     });
   }
 };
 
 exports.getConvohistory = (req, res) => {
+  const userid=(req.query.userId)
+  console.log(userid,"userId")
   connection.query(
-    `SELECT * FROM  ${tableName} WHERE id=1687235347410`,
+    `SELECT * FROM  ${tableName} WHERE user_id= '${userid}'`,
     (error, results) => {
       if (error) {
         console.error("Error inserting user:", error);
@@ -70,6 +84,10 @@ exports.getConvohistory = (req, res) => {
     }
   );
 };
+
+
+
+
 
 exports.updateConvo = (req, res) => {
   const { id } = req.params;
